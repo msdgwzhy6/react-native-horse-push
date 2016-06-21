@@ -7,17 +7,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.graphics.Point;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
-import android.view.WindowManager;
-import android.widget.Toast;
 
 import com.lidroid.xutils.HttpUtils;
 import com.lidroid.xutils.exception.HttpException;
@@ -32,7 +26,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 
 /**
  * Created by techbin on 2016/3/18 0018.
@@ -40,7 +33,6 @@ import java.lang.reflect.Method;
 public class HorsePush {
     private static HorsePush instanceHorsepush = null;
     private static AlertDialog.Builder instanceAlertDialog = null;
-    private static boolean horsePushStartPageFinish = false;//这个页面是否被finish过
     private static String HORSE_PUSH_WORK_PATH = "/mnt/sdcard/";//js文件夹路径,这个路径运行的时候会改变
     private static String HORSE_PUSH_JS_FILE_NAME = "";//js名字
     private static String HORSE_PUSH_ASSET_JS_NAME = "horse.push.js";//asset js名字
@@ -63,6 +55,7 @@ public class HorsePush {
     private int appVersionCode = 0;//我的app版本
     private String jsFileMd5 = "";//我的appmd5
 
+    private static long checkUpdateTime = 0;
     private int[] requestRetryActionTime = {1500, 2000, 2500, 5000, 10000};//配置重试次数
     private int requestRetryCount = 0;//重试次数
     private boolean showUpdateDialog = false;//是否显示更新对话框
@@ -141,12 +134,28 @@ public class HorsePush {
         checkUpdate();//更新
     }
 
+    //是否可以更新
+    private static boolean isCanUpdate() {
+        long tempTime = System.currentTimeMillis();
+        if (checkUpdateTime == 0) {
+            checkUpdateTime = tempTime;
+            return false;
+        }//如果刚开始打开是10秒内是不可以更新的
+
+        if (tempTime - checkUpdateTime < 10000) {
+            return false;
+        }//间隔秒内不可以重复更新
+
+        checkUpdateTime = tempTime;
+
+        return instanceHorsepush != null;
+    }
 
     public static void reCheckUpdate() {
 
-        if (instanceHorsepush == null || !horsePushStartPageFinish)
+        if (!isCanUpdate()) {
             return;
-
+        }
         instanceHorsepush.requestRetryCount = 0;
         instanceHorsepush.showUpdateDialog = true;
         instanceHorsepush.checkUpdate();
@@ -254,9 +263,9 @@ public class HorsePush {
         params.addBodyParameter("channel", channel);
         params.addBodyParameter("md5", jsFileMd5);
         params.addBodyParameter("appversioncode", String.valueOf(appVersionCode));
-        params.addBodyParameter("isdev", isDev() ? "1" : "0");
+        params.addBodyParameter("isdev", HorsePushUtils.isDev() ? "1" : "0");
         params.addBodyParameter("sdkint", String.valueOf(Build.VERSION.SDK_INT));
-        params.addBodyParameter("screensize", getScreenSize());
+        params.addBodyParameter("screensize", HorsePushUtils.getScreenSize(mContext));
         params.addBodyParameter("brand", android.os.Build.BRAND);
         params.addBodyParameter("model", android.os.Build.MODEL);
         params.addBodyParameter("extradata", HorsePushModule.getExtraData(mContext));
@@ -423,7 +432,7 @@ public class HorsePush {
                 if (!showUpdateDialog) {
                     updateJs();
                 } else {//默认是不显示更新对话框的
-                    if(instanceAlertDialog!=null)
+                    if (instanceAlertDialog != null)
                         return;
                     getInstanceAlertDialog(mActivity)
                             .setMessage(jsVersionInfo)
@@ -434,7 +443,7 @@ public class HorsePush {
                             })
                             .setNegativeButton("取消", new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int which) {
-                                    instanceAlertDialog=null;
+                                    instanceAlertDialog = null;
                                     if (jsForceUpdate)//如果是强制更新点击取消会退出
                                         System.exit(0);
                                 }
@@ -528,24 +537,19 @@ public class HorsePush {
     }
 
 
+    //n秒后销毁启动页面
     private void finishStartPage(int time) {
-        if (horsePushStartPageFinish)
-            return;
         try {
             new Handler().postDelayed(new Runnable() {
                 @Override
-                public void run() {
+                public void run() { 
+                    if (HorsePushStartPage.mActivity == null)
+                        return;
                     HorsePushStartPage.mActivity.finish();
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            horsePushStartPageFinish = true;
-                        }
-                    }, 1000);
+                    Log.d("1111111111111111", "HorsePushStartPage.mActivity.finish()" );
                 }
             }, time);
-        } catch (Exception e) {
-        }
+        } catch (Exception e) { }
     }
 
     /**
@@ -585,52 +589,6 @@ public class HorsePush {
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(i);
         System.exit(0);
-    }
-
-
-    //是否为开发者
-    private boolean isDev() {
-        try {
-            File f = new File("/sdcard/horsepush.d");
-            if (!f.exists()) {
-                return false;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-    //得到屏幕分辨率
-    private String getScreenSize() {
-        //first method
-        if (Build.VERSION.SDK_INT < 17) {
-            DisplayMetrics dm2 = mContext.getResources().getDisplayMetrics();
-            // 竖屏
-            if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                return dm2.widthPixels + "x" + dm2.heightPixels;
-            } else {// 横屏
-                return dm2.heightPixels + "x" + dm2.widthPixels;
-            }
-        } else {
-            WindowManager windowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
-            Display display = windowManager.getDefaultDisplay();
-            Point size = new Point();
-            try {
-                Method method = display.getClass().getMethod("getRealSize", Point.class);
-                method.invoke(display, size);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            int screenWidth = size.x;
-            int screenHeight = size.y;
-            if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                return screenWidth + "x" + screenHeight;
-            } else {
-                return screenHeight + "x" + screenWidth;
-            }
-        }
     }
 
 

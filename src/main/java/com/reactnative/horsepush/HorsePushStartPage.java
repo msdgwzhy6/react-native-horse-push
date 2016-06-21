@@ -20,7 +20,7 @@ import android.widget.Toast;
  * Created by techbin on 2016/4/13 0013.
  */
 public class HorsePushStartPage extends Activity {
-    public static Activity mActivity=null;
+    public static Activity mActivity = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,17 +48,26 @@ public class HorsePushStartPage extends Activity {
         tempviewRoot.setPadding(0, height, 0, 0);
         tempviewRoot.addView(pro);
         tempviewRoot.setLayoutParams(layoutParams);
+        int imgSampleSize=7;
+        try{
+            int tempScreenSize=Integer.valueOf(HorsePushUtils.getScreenSize(getApplicationContext(),true));
+            if(tempScreenSize>=1080){
+                imgSampleSize=2;
+            }else if(tempScreenSize>=720){
+                imgSampleSize=3;
+            }else if(tempScreenSize>=540){
+                imgSampleSize=4;
+            }else if(tempScreenSize>=480){
+                imgSampleSize=5;
+            }
+        }catch (Exception e){ }
+
 
         try {
-//            AssetManager assetManager = getAssets();
-//            InputStream is = assetManager.open("test.png");
-//            //以下注释掉的代码不靠谱.若采用,会有异常
-//            // Bitmap bitmap= BitmapFactory.decodeStream(is);
-//            Drawable dr = Drawable.createFromStream(is, null);
-//            imageView.setImageDrawable(dr);
+
             String img = HorsePush.getStartPageImgPath(this);
             BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = 2;
+            options.inSampleSize = imgSampleSize;
             Bitmap bm = BitmapFactory.decodeFile(img, options);
             imageView.setImageBitmap(bm);
 
@@ -70,13 +79,14 @@ public class HorsePushStartPage extends Activity {
         setContentView(layoutRoot);
 
 
-        }
+    }
 
     private long exitTime = 0;
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if(keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN){
-            if((System.currentTimeMillis()-exitTime) > 2000){
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
+            if ((System.currentTimeMillis() - exitTime) > 2000) {
                 Toast.makeText(getApplicationContext(), "再按一次退出程序", Toast.LENGTH_SHORT).show();
                 exitTime = System.currentTimeMillis();
             } else {
@@ -99,6 +109,8 @@ public class HorsePushStartPage extends Activity {
         NetworkInfo ni = cm.getActiveNetworkInfo();
         return ni != null && ni.isConnectedOrConnecting();
     }
+
+
 
 
 }

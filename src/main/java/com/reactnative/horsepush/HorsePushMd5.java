@@ -2,8 +2,7 @@ package com.reactnative.horsepush;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 
 /**
@@ -16,21 +15,45 @@ public class HorsePushMd5 {
 			'8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 	private static MessageDigest messagedigest;
 
-	/* 获取一个文件的md5码 */
-	public static String getFileMD5String(File file)   {
-		String md5Str="";
-		try {
-			messagedigest = MessageDigest.getInstance("MD5");
-			FileInputStream in = new FileInputStream(file);
-			FileChannel ch = in.getChannel();
-			MappedByteBuffer byteBuffer = ch.map(FileChannel.MapMode.READ_ONLY, 0,
-					file.length());
-			messagedigest.update(byteBuffer);
+//	/* 获取一个文件的md5码 */
+//	public static String getFileMD5String(File file)   {
+//		String md5Str="";
+//		try {
+//			messagedigest = MessageDigest.getInstance("MD5");
+//			FileInputStream in = new FileInputStream(file);
+//			FileChannel ch = in.getChannel();
+//			MappedByteBuffer byteBuffer = ch.map(FileChannel.MapMode.READ_ONLY, 0,
+//					file.length());
+//			messagedigest.update(byteBuffer);
+//
+//			md5Str = bufferToHex(messagedigest.digest());
+//		}catch (Exception e){ }
+//		return md5Str;
+//	}
 
-			md5Str = bufferToHex(messagedigest.digest());
-		}catch (Exception e){ }
-		return md5Str;
+
+	public static String getFileMD5String(File file) {
+		if (!file.isFile()) {
+			return "";
+		}
+		MessageDigest digest = null;
+		FileInputStream in = null;
+		byte buffer[] = new byte[1024];
+		int len;
+		try {
+			digest = MessageDigest.getInstance("MD5");
+			in = new FileInputStream(file);
+			while ((len = in.read(buffer, 0, 1024)) != -1) {
+				digest.update(buffer, 0, len);
+			}
+			in.close();
+		} catch (Exception e) {
+			return "";
+		}
+		BigInteger bigInt = new BigInteger(1, digest.digest());
+		return bigInt.toString(16);
 	}
+
 
 	/* 获取一个字符串的md5码 */
 	public static String getStringMD5String(String str) throws Exception {
