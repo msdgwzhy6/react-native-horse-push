@@ -32,27 +32,64 @@ public class HorsePushMd5 {
 //	}
 
 
-	public static String getFileMD5String(File file) {
-		if (!file.isFile()) {
-			return "";
-		}
-		MessageDigest digest = null;
-		FileInputStream in = null;
-		byte buffer[] = new byte[1024];
-		int len;
+//	public static String getFileMD5String(File file) {
+//		if (!file.isFile()) {
+//			return "";
+//		}
+//		MessageDigest digest = null;
+//		FileInputStream in = null;
+//		byte buffer[] = new byte[1024];
+//		int len;
+//		try {
+//			digest = MessageDigest.getInstance("MD5");
+//			in = new FileInputStream(file);
+//			while ((len = in.read(buffer, 0, 1024)) != -1) {
+//				digest.update(buffer, 0, len);
+//			}
+//			in.close();
+//		} catch (Exception e) {
+//			return "";
+//		}
+//		BigInteger bigInt = new BigInteger(1, digest.digest());
+//		return bigInt.toString(16);
+//	}
+
+
+	/**
+	 * 获取文件的md5值v3
+	 * @param path 文件的全路径名称
+	 * @return
+	 */
+	public static String  getFileMD5String(File file){
 		try {
-			digest = MessageDigest.getInstance("MD5");
-			in = new FileInputStream(file);
-			while ((len = in.read(buffer, 0, 1024)) != -1) {
+			// md5
+			MessageDigest digest = MessageDigest.getInstance("md5");
+			FileInputStream fis = new FileInputStream(file);
+			byte[] buffer = new byte[1024];
+			int len = -1;
+			while ((len = fis.read(buffer)) != -1) {
 				digest.update(buffer, 0, len);
 			}
-			in.close();
+			byte[] result = digest.digest();
+			StringBuffer sb  = new StringBuffer();
+			for (byte b : result) {
+				// 与运算
+				int number = b & 0xff;// 加盐
+				String str = Integer.toHexString(number);
+				// System.out.println(str);
+				if (str.length() == 1) {
+					sb.append("0");
+				}
+				sb.append(str);
+			}
+			return sb.toString();
 		} catch (Exception e) {
+			e.printStackTrace();
 			return "";
 		}
-		BigInteger bigInt = new BigInteger(1, digest.digest());
-		return bigInt.toString(16);
 	}
+
+
 
 
 	/* 获取一个字符串的md5码 */

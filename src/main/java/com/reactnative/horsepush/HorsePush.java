@@ -11,7 +11,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
-import android.util.Log;
 
 import com.lidroid.xutils.HttpUtils;
 import com.lidroid.xutils.exception.HttpException;
@@ -110,8 +109,8 @@ public class HorsePush {
 
     //检查js
     private void checkJS() {
-        String jsRecord = HorsePushModule.getSharedPreferences(mContext, "js_name");//设置js默认值
-        String jsRecordMd5 = HorsePushModule.getSharedPreferences(mContext, "js_name_md5");//读取md5
+        String jsRecord = HorsePushUtils.getSharedPreferences(mContext, "js_name");//设置js默认值
+        String jsRecordMd5 = HorsePushUtils.getSharedPreferences(mContext, "js_name_md5");//读取md5
 
         String jsDelFileName = jsRecord.equals(HORSE_PUSH_JS1_FILE_NAME) ? HORSE_PUSH_JS2_FILE_NAME : HORSE_PUSH_JS1_FILE_NAME;
         HORSE_PUSH_JS_FILE_NAME = jsRecord.equals(HORSE_PUSH_JS1_FILE_NAME) ? HORSE_PUSH_JS1_FILE_NAME : HORSE_PUSH_JS2_FILE_NAME;
@@ -126,12 +125,11 @@ public class HorsePush {
                 f.delete();
                 copyAssetFileToFiles(HORSE_PUSH_ASSET_JS_NAME, HORSE_PUSH_WORK_PATH + HORSE_PUSH_JS_FILE_NAME + ".t");
                 File t = new File(HORSE_PUSH_WORK_PATH + HORSE_PUSH_JS_FILE_NAME + ".t");
-                HorsePushModule.setSharedPreferences(mContext, "js_name_md5", HorsePushMd5.getFileMD5String(t));
+                HorsePushUtils.setSharedPreferences(mContext, "js_name_md5", HorsePushMd5.getFileMD5String(t));
                 t.renameTo(f);//安全复制
             }
         } catch (Exception e) {
         }
-        checkUpdate();//更新
     }
 
     //是否可以更新
@@ -152,7 +150,6 @@ public class HorsePush {
     }
 
     public static void reCheckUpdate() {
-
         if (!isCanUpdate()) {
             return;
         }
@@ -163,11 +160,11 @@ public class HorsePush {
 
     //检查启动图片
     private void checkStartPageImg() {
-        String startpageimg = HorsePushModule.getSharedPreferences(mContext, "startpageimg");
+        String startpageimg = HorsePushUtils.getSharedPreferences(mContext, "startpageimg");
         File tStartPageImg = new File(HORSE_PUSH_WORK_PATH + startpageimg);
         if (!tStartPageImg.exists() || "".equals(startpageimg)) {
             try {
-                HorsePushModule.setSharedPreferences(mContext, "startpageimg", HORSE_PUSH_START_PAGE_IMG_FILE_NAME);//用默认图片
+                HorsePushUtils.setSharedPreferences(mContext, "startpageimg", HORSE_PUSH_START_PAGE_IMG_FILE_NAME);//用默认图片
                 copyAssetFileToFiles(HORSE_PUSH_START_PAGE_IMG_FILE_NAME, HORSE_PUSH_WORK_PATH + HORSE_PUSH_START_PAGE_IMG_FILE_NAME);
             } catch (Exception e) {
             }
@@ -177,7 +174,7 @@ public class HorsePush {
     private void updateStartPageImg(String imgurl) {
 
         if ("".equals(imgurl)) {
-            HorsePushModule.setSharedPreferences(mActivity, "startpageimg", HORSE_PUSH_START_PAGE_IMG_FILE_NAME);
+            HorsePushUtils.setSharedPreferences(mActivity, "startpageimg", HORSE_PUSH_START_PAGE_IMG_FILE_NAME);
             return;
         }
 
@@ -186,7 +183,7 @@ public class HorsePush {
         } catch (Exception e) {
         }
 
-        final String nowStartPageImg = HorsePushModule.getSharedPreferences(mActivity, "startpageimg");
+        final String nowStartPageImg = HorsePushUtils.getSharedPreferences(mActivity, "startpageimg");
         if (HORSE_PUSH_START_PAGE_IMG_FILE_NAME.equals(nowStartPageImg))
             return;
 
@@ -210,7 +207,7 @@ public class HorsePush {
 
                     @Override
                     public void onSuccess(ResponseInfo<File> arg0) {
-                        HorsePushModule.setSharedPreferences(mActivity, "startpageimg", HORSE_PUSH_START_PAGE_IMG_FILE_NAME);
+                        HorsePushUtils.setSharedPreferences(mActivity, "startpageimg", HORSE_PUSH_START_PAGE_IMG_FILE_NAME);
                         new File(HORSE_PUSH_WORK_PATH + nowStartPageImg).delete();
 
                     }
@@ -224,14 +221,15 @@ public class HorsePush {
 
     //得到启动图片的img地址
     public static String getStartPageImgPath(Activity activity) {
-        String startpageimg = HorsePushModule.getSharedPreferences(activity, "startpageimg");
+        String startpageimg = HorsePushUtils.getSharedPreferences(activity, "startpageimg");
         return HORSE_PUSH_WORK_PATH + (!"".equals(startpageimg) ? startpageimg : HORSE_PUSH_START_PAGE_IMG_FILE_NAME);
     }
 
 
     public static String getJSBundleFile(Activity activity) {
         mActivity = activity;
-
+        instanceHorsepush.checkUpdate();//更新
+        activity.startActivity(new Intent().setClass(activity, HorsePushStartPage.class));
         return getJSBundleFile();
     }
 
@@ -268,7 +266,7 @@ public class HorsePush {
         params.addBodyParameter("screensize", HorsePushUtils.getScreenSize(mContext));
         params.addBodyParameter("brand", android.os.Build.BRAND);
         params.addBodyParameter("model", android.os.Build.MODEL);
-        params.addBodyParameter("extradata", HorsePushModule.getExtraData(mContext));
+        params.addBodyParameter("extradata", HorsePushUtils.getExtraData(mContext));
 
         //Log.d("11111111111111111----------", String.valueOf(System.currentTimeMillis()));
 
@@ -282,12 +280,11 @@ public class HorsePush {
             @Override
             public void onSuccess(ResponseInfo<String> responseInfo) {
                 updateInfo(responseInfo.result);
-                //System.out.println("返回的json字符串：" + responseInfo.result);
             }
 
             @Override
             public void onFailure(HttpException e, String s) {
-                //    Toast.makeText(mContext, "shibai" + e.toString(), 1).show();
+                // 判断重试次数和到了多少
                 if (requestRetryCount < requestRetryActionTime.length) {
                     checkUpdate();//重试
                     return;
@@ -323,7 +320,6 @@ public class HorsePush {
                     downloadFile(!"".equals(javaPatchDownlink) ? DOWN_JAVA_PATCH : DOWN_JAVA);
                     return;//app更新的优先级最高
                 }
-                //Toast.makeText(mContext, "检查js" + String.valueOf(jsDownlinkMd5.equals(jsFileMd5)), 1).show();
                 if (!jsDownlinkMd5.equals(jsFileMd5)) {
                     downloadFile(!"".equals(jsPatchDownlink) ? DOWN_JS_PATCH : DOWN_JS);
                 } else {
@@ -332,7 +328,6 @@ public class HorsePush {
             }
         } catch (Exception e) {
             finishStartPage(2000);
-            //Toast.makeText(mContext,"1111"+e.toString(),1).show();
         }
     }
 
@@ -361,11 +356,9 @@ public class HorsePush {
         String fileMd5 = HorsePushMd5.getFileMD5String(new File(HORSE_PUSH_WORK_PATH + netMd5 + fileName));
         if (fileMd5.equals(netMd5)) {
             downloadFileSuccess(downTag);
-            //Toast.makeText(mContext, "buzouxiazai", 1).show();
             return;
         }
 
-        //Toast.makeText(mContext, "zouxiazai", 1).show();
         HttpUtils http = new HttpUtils();
         http.download(url, HORSE_PUSH_WORK_PATH + netMd5 + ".t", true, true, new RequestCallBack<File>() {
                     @Override
@@ -460,6 +453,7 @@ public class HorsePush {
 
     //整个app下载成功
     private void updateApk() {
+        finishStartPage(10);
         String tempFileMd5 = "";
 
         final File apkPath = new File(HORSE_PUSH_WORK_PATH + javaDownlinkMd5 + ".apk");
@@ -500,7 +494,6 @@ public class HorsePush {
             tempFileMd5 = HorsePushMd5.getFileMD5String(new File(jsPath));
         } catch (Exception e) {
         }
-        //Toast.makeText(mContext, "22222" + tempFileMd5 + "---" + jsDownlinkMd5, 1).show();
         finishStartPage(3000);
         if (!tempFileMd5.equals(jsDownlinkMd5) || mActivity == null)
             return;
@@ -510,8 +503,8 @@ public class HorsePush {
         File f = new File(HORSE_PUSH_WORK_PATH + jsDownlinkMd5 + ".js");
         File n = new File(HORSE_PUSH_WORK_PATH + HORSE_PUSH_JS_FILE_NAME);
         f.renameTo(n);
-        HorsePushModule.setSharedPreferences(mContext, "js_name", HORSE_PUSH_JS_FILE_NAME);
-        HorsePushModule.setSharedPreferences(mContext, "js_name_md5", tempFileMd5);
+        HorsePushUtils.setSharedPreferences(mContext, "js_name", HORSE_PUSH_JS_FILE_NAME);
+        HorsePushUtils.setSharedPreferences(mContext, "js_name_md5", tempFileMd5);
         reApp(mContext);
 
     }
@@ -542,14 +535,15 @@ public class HorsePush {
         try {
             new Handler().postDelayed(new Runnable() {
                 @Override
-                public void run() { 
+                public void run() {
                     if (HorsePushStartPage.mActivity == null)
                         return;
+                    checkUpdateTime = System.currentTimeMillis();
                     HorsePushStartPage.mActivity.finish();
-                    Log.d("1111111111111111", "HorsePushStartPage.mActivity.finish()" );
                 }
             }, time);
-        } catch (Exception e) { }
+        } catch (Exception e) {
+        }
     }
 
     /**

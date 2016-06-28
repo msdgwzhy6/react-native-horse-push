@@ -1,9 +1,11 @@
 package com.reactnative.horsepush;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
@@ -15,6 +17,9 @@ import java.lang.reflect.Method;
  * Created by techbin on 16-6-15.
  */
 public class HorsePushUtils {
+
+    private static String HORSEPUSH = "HorsePush";
+
     //得到屏幕分辨率
     public static String getScreenSize(Context mContext) {
         String tempScreenSize = getScreenSize(mContext, false);
@@ -67,5 +72,22 @@ public class HorsePushUtils {
     }
 
 
+
+    public static String getExtraData(Context context) {
+        return getSharedPreferences(context, HORSEPUSH + "extradata");
+    }
+
+    //调用小型存储用的
+    public static String getSharedPreferences(Context context, String key) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        return sharedPreferences.getString(HORSEPUSH + key, "");
+    }
+    //调用小型存储用的
+    public static void setSharedPreferences(Context context, String key, String value) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString(HORSEPUSH + key, value);
+        editor.commit();
+    }
 
 }

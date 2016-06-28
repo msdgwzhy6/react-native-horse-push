@@ -1,11 +1,9 @@
 package com.reactnative.horsepush;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.preference.PreferenceManager;
+import android.os.Build;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -22,7 +20,7 @@ import java.util.Locale;
  */
 public class HorsePushModule extends ReactContextBaseJavaModule {
     private static ReactApplicationContext mReactApplicationContext;
-    private static String HORSEPUSH = "HorsePush";
+
 
     public HorsePushModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -31,7 +29,7 @@ public class HorsePushModule extends ReactContextBaseJavaModule {
 
     @Override
     public String getName() {
-        return HORSEPUSH;
+        return "HorsePush";
     }
 
     //得到用户app包名列表
@@ -54,9 +52,89 @@ public class HorsePushModule extends ReactContextBaseJavaModule {
         callback.invoke(map);
     }
 
+
+    //得到渠道号
+    @ReactMethod
+    public static void getUmengChannel(Callback callback) {
+        if (mReactApplicationContext == null)
+            return;
+        String channel="";
+        try {
+            PackageManager localPackageManager = mReactApplicationContext.getPackageManager();
+            ApplicationInfo localApplicationInfo = localPackageManager.getApplicationInfo(mReactApplicationContext.getPackageName(), 128);
+            if (localApplicationInfo != null) {
+                Object value = localApplicationInfo.metaData.get("UMENG_CHANNEL");
+                if (value != null)
+                    channel= String.valueOf(value);
+            }
+        } catch (Exception e) {  }
+        callback.invoke(channel);
+    }
+
+
+    @ReactMethod
+    public static void getVersionCode(Callback callback) {
+        if (mReactApplicationContext == null)
+            return;
+        String vCode = "0";
+        try {
+            PackageManager t = mReactApplicationContext.getPackageManager();
+            PackageInfo pi = t.getPackageInfo(mReactApplicationContext.getPackageName(), 0);
+            vCode = String.valueOf(pi.versionCode);
+        } catch (Throwable v) {
+        }
+
+
+        callback.invoke(vCode);
+    }
+
+    @ReactMethod
+    public static void getVersion(Callback callback) {
+        if (mReactApplicationContext == null)
+            return;
+        String vName = "1.0";
+        try {
+            PackageManager t = mReactApplicationContext.getPackageManager();
+            PackageInfo pi = t.getPackageInfo(mReactApplicationContext.getPackageName(), 0);
+            vName = pi.versionName;
+        } catch (Throwable v) {
+        }
+        callback.invoke(vName);
+    }
+
+    @ReactMethod
+    public static void getBrand(Callback callback) {
+        callback.invoke(android.os.Build.BRAND);
+    }
+
+    @ReactMethod
+    public static void getDeviceType(Callback callback) {
+        callback.invoke(android.os.Build.MODEL);
+    }
+
+    @ReactMethod
+    public static void getOs(Callback callback) {
+        callback.invoke(android.os.Build.VERSION.RELEASE);
+    }
+
+    @ReactMethod
+    public static void getSDKINT(Callback callback) {
+        callback.invoke(Build.VERSION.SDK_INT);
+    }
+
+    @ReactMethod
+    public static void getResolution(Callback callback) {
+        if (mReactApplicationContext == null)
+            return;
+        callback.invoke(HorsePushUtils.getScreenSize(mReactApplicationContext));
+    }
+
+
     @ReactMethod
     public void getLanguage(Callback callback) {
-        Locale locale = HorsePushStartPage.mActivity.getResources().getConfiguration().locale;
+        if (mReactApplicationContext == null)
+            return;
+        Locale locale = mReactApplicationContext.getResources().getConfiguration().locale;
         String language = locale.getLanguage();
         callback.invoke(language);
     }
@@ -64,7 +142,10 @@ public class HorsePushModule extends ReactContextBaseJavaModule {
     //让启动页面隐藏
     @ReactMethod
     public static void setStartPageHide() {
-        HorsePushStartPage.mActivity.finish();
+        try {
+            HorsePushStartPage.mActivity.finish();
+        } catch (Exception e) {
+        }
     }
 
     //小型存储用的 set
@@ -72,31 +153,22 @@ public class HorsePushModule extends ReactContextBaseJavaModule {
     public static void setExtraData(String value) {
         if (mReactApplicationContext == null)
             return;
-        setSharedPreferences(mReactApplicationContext, HORSEPUSH + "extradata", value);
+        HorsePushUtils.setSharedPreferences(mReactApplicationContext, "extradata", value);
     }
 
     @ReactMethod
     public static void getExtraData(Callback callback) {
         if (mReactApplicationContext == null)
             return;
-        callback.invoke(getSharedPreferences(mReactApplicationContext, HORSEPUSH + "extradata"));
+        callback.invoke(HorsePushUtils.getSharedPreferences(mReactApplicationContext, "extradata"));
     }
 
 
-    public static String getExtraData(Context context) {
-        return getSharedPreferences(context, HORSEPUSH + "extradata");
-    }
-
-    public static String getSharedPreferences(Context context, String key) {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        return sharedPreferences.getString(key, "");
-    }
-
-    public static void setSharedPreferences(Context context, String key, String value) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString(key, value);
-        editor.commit();
+    @ReactMethod
+    public static void getIsDev(Callback callback) {
+        if (mReactApplicationContext == null)
+            return;
+        callback.invoke(HorsePushUtils.isDev() ? "1" : "0");
     }
 
 

@@ -110,7 +110,11 @@ public class HorsePushStartPage extends Activity {
         return ni != null && ni.isConnectedOrConnecting();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
 
+    }
 
 
 }

@@ -1,0 +1,24 @@
+{
+  "name": "react-native-hot-update",
+  "version": "1.8.0",
+  "description": "react-native-hot-update react-native-difference-update",
+  "main": "README.md",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shenzhenjinma/react-native-horse-push.git"
+  },
+  "keywords": [
+    "react-native-hot-update",
+    "react-native-difference-update",
+    "shenzhenjinma"
+  ],
+  "author": "root@68xg.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shenzhenjinma/react-native-horse-push/issues"
+  },
+  "homepage": "https://github.com/shenzhenjinma/react-native-horse-push#readme"
+}
