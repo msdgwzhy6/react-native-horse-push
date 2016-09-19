@@ -1,6 +1,6 @@
 {
   "name": "react-native-hot-update",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "react-native-hot-update react-native-difference-update",
   "main": "README.md",
   "scripts": {

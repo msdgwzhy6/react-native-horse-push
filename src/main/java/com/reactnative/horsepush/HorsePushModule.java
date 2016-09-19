@@ -1,9 +1,12 @@
 package com.reactnative.horsepush;
 
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
+import android.widget.Toast;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -11,7 +14,12 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
+import com.lidroid.xutils.HttpUtils;
+import com.lidroid.xutils.exception.HttpException;
+import com.lidroid.xutils.http.ResponseInfo;
+import com.lidroid.xutils.http.callback.RequestCallBack;
 
+import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
@@ -162,6 +170,52 @@ public class HorsePushModule extends ReactContextBaseJavaModule {
             return;
         callback.invoke(HorsePushUtils.getSharedPreferences(mReactApplicationContext, "extradata"));
     }
+
+
+    @ReactMethod
+    public static void downloadFile(String downUrl , String sdcardPath,  String fileName, final Callback callback) {
+        if ("".equals(sdcardPath.trim()))
+            sdcardPath="/sdcard/DCIM/";
+
+        File f = new File(sdcardPath);
+        if (!f.exists()) {
+            f.mkdir();
+        }
+
+        if ("".equals(fileName.trim())) {
+            fileName=String.valueOf(System.currentTimeMillis());
+            try {
+                fileName =HorsePushMd5.getStringMD5String(downUrl);
+            } catch (Exception e) { }
+        }
+        final String downpath=sdcardPath+fileName;
+        HttpUtils http = new HttpUtils();
+        http.download(downUrl,downpath , true, true, new RequestCallBack<File>() {
+                    @Override
+                    public void onLoading(long total, long current, boolean isUploading) {
+                        super.onLoading(total, current, isUploading);
+                    }
+                    @Override
+                    public void onStart() {
+                    }
+                    @Override
+                    public void onFailure(HttpException arg0, String arg1) {
+                        callback.invoke( "error:"+arg1);
+                    }
+                    @Override
+                    public void onSuccess(ResponseInfo<File> arg0) {
+                        callback.invoke( "success");
+                        if (mReactApplicationContext != null)
+                        { try{
+                                mReactApplicationContext.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(new File(downpath))));
+                            }catch(Exception e){}
+                        }
+                    }
+                }
+        );
+    }
+
+
 
 
     @ReactMethod

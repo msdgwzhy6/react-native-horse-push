@@ -31,12 +31,6 @@
 * 修改 MainActivity (in MainActivity.java)
 
 ```java
-
-    protected void onCreate(Bundle savedInstanceState) {
-        startActivity(new Intent().setClass(getApplicationContext(), HorsePushStartPage.class));// <------ 加入这个代码，使用启动屏
-    }
-
-
     protected String getJSBundleFile() {
         return HorsePush.getJSBundleFile(this); // <------ 加入这个代码告诉rn通过本地启动
     } 
@@ -53,7 +47,6 @@
 	通过 bsdiff生成，这两天没空，我会更新的，很简单的你自己研究下bsdiff的用法
 
 ## Usage
-
 	每次打开app的时候都会请求你在application里面写的接口，由接口返回更新数据，数据格式如下,
 	每次会吧自己的app版本号和渠道号和js的md5传送给服务器，由服务器返回的数据决定是差异更新还是完整更新，
 	如果差异更新里面字段有内容就用差异更新进行更新，
