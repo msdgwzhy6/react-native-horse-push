@@ -1,4 +1,10 @@
 # React Native Horse Push (深圳金马 root#68xg.com)
+关键词(
+react native hot update
+react native update
+react native diff update
+)
+提供有偿技术支持 qq85011270
 集成了灰度部署，但是需要再后端实现，这里因为没有时间就先写差异更新，
 文档肯定写的不好，我有空再写详细点，有啥问题加qq群389969823
 就不装逼写那么多英文了，给国人看的都中文吧
